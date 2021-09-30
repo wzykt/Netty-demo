@@ -19,3 +19,13 @@ SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further detail
     <version>1.7.25</version>
 </dependency>
 ```
+
+
+## 修改Typora图片格式
+文件–>偏好设置–>外观–>打开主题文件夹–>找到github.css文件–>在github.css文件的最下面添加如下的css样式。
+```css
+p .md-image:only-child{
+    width: auto;
+    text-align: inherit;
+}
+```
