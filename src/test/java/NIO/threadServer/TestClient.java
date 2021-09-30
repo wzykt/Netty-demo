@@ -1,4 +1,4 @@
-package netty.threadServer;
+package NIO.threadServer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

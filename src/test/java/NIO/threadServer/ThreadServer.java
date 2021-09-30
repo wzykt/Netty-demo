@@ -1,6 +1,6 @@
-package netty.threadServer;
+package NIO.threadServer;
 
-import netty.ByteBufferUtil;
+import NIO.ByteBufferUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -9,13 +9,14 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class MultiThreadServer {
+/**
+ * 并发下有异常情况
+ */
+public class ThreadServer {
+
     public static void main(String[] args) {
         try (ServerSocketChannel server = ServerSocketChannel.open()) {
             // 当前线程为Boss线程
@@ -25,13 +26,8 @@ public class MultiThreadServer {
             Selector boss = Selector.open();
             server.configureBlocking(false);
             server.register(boss, SelectionKey.OP_ACCEPT);
-            // 创建固定数量的Worker
-            Worker[] workers = new Worker[4];
-            // 用于负载均衡的原子整数
-            AtomicInteger robin = new AtomicInteger(0);
-            for (int i = 0; i < workers.length; i++) {
-                workers[i] = new Worker("worker-" + i);
-            }
+            Worker worker = new Worker("worker-0");
+            worker.register();
             while (true) {
                 boss.select();
                 Set<SelectionKey> selectionKeys = boss.selectedKeys();
@@ -42,13 +38,12 @@ public class MultiThreadServer {
                     // BossSelector负责Accept事件
                     if (key.isAcceptable()) {
                         // 建立连接
-                        SocketChannel socket = server.accept();
+                        SocketChannel sc = server.accept();
                         System.out.println("connected...");
-                        socket.configureBlocking(false);
+                        sc.configureBlocking(false);
                         // socket注册到Worker的Selector中
                         System.out.println("before read...");
                         // 负载均衡，轮询分配Worker
-                        workers[robin.getAndIncrement() % workers.length].register(socket);
                         System.out.println("after read...");
                     }
                 }
@@ -63,53 +58,27 @@ public class MultiThreadServer {
         private volatile Selector selector;
         private String name;
         private volatile boolean started = false;
-        /**
-         * 同步队列，用于Boss线程与Worker线程之间的通信
-         */
-        private ConcurrentLinkedQueue<Runnable> queue;
 
         public Worker(String name) {
             this.name = name;
         }
 
-        public void register(final SocketChannel socket) throws IOException {
+        public void register() throws IOException {
             // 只启动一次
             if (!started) {
                 thread = new Thread(this, name);
                 selector = Selector.open();
-                queue = new ConcurrentLinkedQueue<>();
                 thread.start();
                 started = true;
             }
-
-            // 向同步队列中添加SocketChannel的注册事件
-            // 在Worker线程中执行注册事件
-            queue.add(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        socket.register(selector, SelectionKey.OP_READ);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-            // 唤醒被阻塞的Selector
-            // select类似LockSupport中的park，wakeup的原理类似LockSupport中的unpark
-            selector.wakeup();
         }
 
         @Override
         public void run() {
             while (true) {
                 try {
-                     selector.select();
+                    selector.select();
                     // 通过同步队列获得任务并运行
-                    Runnable task = queue.poll();
-                    if (task != null) {
-                        // 获得任务，执行注册操作
-                        task.run();
-                    }
                     Set<SelectionKey> selectionKeys = selector.selectedKeys();
                     Iterator<SelectionKey> iterator = selectionKeys.iterator();
                     while (iterator.hasNext()) {
