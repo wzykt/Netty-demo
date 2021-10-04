@@ -1,6 +1,7 @@
 # Netty-demo
 Netty-demo
 
+目前看到P65，关于sync方法的问题，10.3停止
 
 ## 异常报错及解决方案
 
