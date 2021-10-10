@@ -1,7 +1,7 @@
 # Netty-demo
 Netty-demo
 
-目前看到P65，关于sync方法的问题，10.3停止
+
 
 ## 异常报错及解决方案
 
@@ -30,3 +30,7 @@ p .md-image:only-child{
     text-align: inherit;
 }
 ```
+
+
+##idea使用技巧
+右键匿名内部类refactor，将匿名内部类转为静态内部类
