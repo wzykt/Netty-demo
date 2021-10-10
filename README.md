@@ -1,6 +1,7 @@
 # Netty-demo
 Netty-demo
 
+目前Json序列化还有问题
 
 
 ## 异常报错及解决方案
@@ -32,5 +33,5 @@ p .md-image:only-child{
 ```
 
 
-##idea使用技巧
+## idea使用技巧
 右键匿名内部类refactor，将匿名内部类转为静态内部类
